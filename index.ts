@@ -30,12 +30,12 @@ interface DesmarcarCorreo {
     id_correo_favorito: number;
 }
 
-// Ruta principal básica para verificar
+// Ruta main
 app.get('/', () => {
     return 'Hello, World!';
 });
 
-// Endpoint para registrar usuario
+// EP registro
 app.post('/api/registrar', async ({ body }) => {
     const { nombre, correo, clave, descripcion } = body as RegistrarUsuario;
     const usuario = await prisma.usuario.create({
@@ -44,7 +44,7 @@ app.post('/api/registrar', async ({ body }) => {
     return { estado: 200, mensaje: 'Usuario registrado correctamente' };
 });
 
-// Endpoint para bloquear usuario
+// EP bloqueo
 app.post('/api/bloquear', async ({ body }) => {
     const { correo, clave, correo_bloquear } = body as BloquearUsuario;
     const usuario = await prisma.usuario.updateMany({
@@ -54,7 +54,7 @@ app.post('/api/bloquear', async ({ body }) => {
     return { estado: 200, mensaje: 'Usuario bloqueado correctamente' };
 });
 
-// Endpoint para obtener información de un usuario
+// EP info
 app.get('/api/informacion/:correo', async ({ params }) => {
     const usuario = await prisma.usuario.findUnique({
     where: { correo: params.correo },
@@ -63,7 +63,7 @@ app.get('/api/informacion/:correo', async ({ params }) => {
     return usuario ? { estado: 200, ...usuario } : { estado: 400, mensaje: 'Usuario no encontrado' };
 });
 
-// Endpoint para marcar correo como favorito
+// EP marcar fav
 app.post('/api/marcarcorreo', async ({ body }) => {
     const { correo, clave, id_correo_favorito } = body as MarcarCorreo;
     const correoFavorito = await prisma.correo.update({
@@ -73,7 +73,7 @@ app.post('/api/marcarcorreo', async ({ body }) => {
     return { estado: 200, mensaje: 'Correo marcado como favorito' };
 });
 
-// Endpoint para desmarcar correo como favorito
+// EP desmarcar fav
 app.delete('/api/desmarcarcorreo', async ({ body }) => {
     const { correo, clave, id_correo_favorito } = body as DesmarcarCorreo;
     const correoFavorito = await prisma.correo.update({
@@ -83,7 +83,7 @@ app.delete('/api/desmarcarcorreo', async ({ body }) => {
     return { estado: 200, mensaje: 'Correo desmarcado como favorito' };
 });
 
-// Iniciar el servidor en el puerto 3000
+// Iniciar serv
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
 });
