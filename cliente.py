@@ -20,7 +20,6 @@ def registrar():
     else:
         print("Error en el registro: ", response.json().get('mensaje', 'Error desconocido'))
 
-
 def autenticar():
     correo = input("Ingrese su correo: ")
     clave = input("Ingrese su clave: ")
@@ -53,6 +52,16 @@ def ver_informacion(correo, clave):
 
 def ver_favoritos(correo, clave):
     response = requests.get(f"{BASE_URL}/favoritos", params={"correo": correo, "clave": clave})
+    print(response.json())
+
+def marcar_favorito(correo, clave):
+    id_correo = int(input("Ingrese el ID del correo a marcar como favorito: "))
+    data = {
+        "correo": correo,
+        "clave": clave,
+        "id_correo_favorito": id_correo
+    }
+    response = requests.post(f"{BASE_URL}/marcarcorreo", json=data)
     print(response.json())
 
 def marcar_favorito(correo, clave):

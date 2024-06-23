@@ -40,8 +40,13 @@ interface VerFavoritos {
     clave: string;
 }
 
-
-
+interface EnviarCorreo {
+    correo: string;
+    clave: string;
+    destinatario: string;
+    asunto: string;
+    mensaje: string;
+}   
 
 // Ruta main
 app.get('/', () => {
@@ -58,7 +63,7 @@ app.post('/api/registrar', async ({ body }) => {
 });
 
 // EP bloqueo
-app.post('/api/bloquear', async ({ body }) => {
+app.post('/api/bloquear1', async ({ body }) => {
     const { correo, clave, correo_bloquear } = body as BloquearUsuario;
     const usuario = await prisma.usuario.updateMany({
     where: { correo: correo_bloquear },
@@ -66,23 +71,54 @@ app.post('/api/bloquear', async ({ body }) => {
     });
     return { estado: 200, mensaje: 'Usuario bloqueado correctamente' };
 });
-4
-// EP info
-app.get('/api/informacion/:correo', async ({ params }) => {
-    console.log(`Buscando usuario con correo: ${params.correo}`); // Debugging
 
-    const usuario = await prisma.usuario.findUnique({
-        where: { correo: params.correo },
-        select: { nombre: true, correo: true, descripcion: true }
-    });
+//EP bloqueo bkn
+app.post('/api/bloquear', async ({ body }) => {
+    const { correo, clave, correo_bloquear } = body as BloquearUsuario;
 
-    console.log(`Resultado de la búsqueda: ${JSON.stringify(usuario)}`); // Debugging
+    try {
+        // Verificar las credenciales del remitente
+        const usuario = await prisma.usuario.findUnique({
+            where: { correo: correo },
+        });
 
-    return usuario
-        ? { estado: 200, ...usuario }
-        : { estado: 400, mensaje: 'Usuario no encontrado' };
-    });
+        if (!usuario || usuario.clave !== clave) {
+            return {
+                status: 400,
+                json: { mensaje: 'Credenciales incorrectas' }
+            };
+        }
 
+        // Verificar que el usuario a bloquear existe
+        const usuarioBloquear = await prisma.usuario.findUnique({
+            where: { correo: correo_bloquear },
+        });
+
+        if (!usuarioBloquear) {
+            return {
+                status: 400,
+                json: { mensaje: 'El usuario a bloquear no existe' }
+            };
+        }
+
+        // Bloquear al usuario
+        await prisma.usuario.update({
+            where: { correo: correo_bloquear },
+            data: { bloqueado: true }
+        });
+
+        return {
+            status: 200,
+            json: { mensaje: 'Usuario bloqueado correctamente' }
+        };
+    } catch (error) {
+        console.error('Error bloqueando al usuario:', error);
+        return {
+            status: 500,
+            json: { mensaje: 'Error del servidor' }
+        };
+    }
+});
 
 // EP marcar fav
 app.post('/api/marcarcorreo', async ({ body }) => {
@@ -123,15 +159,62 @@ app.post('/api/marcarcorreo', async ({ body }) => {
     }
 });
 
-
 // EP desmarcar fav
 app.delete('/api/desmarcarcorreo', async ({ body }) => {
     const { correo, clave, id_correo_favorito } = body as DesmarcarCorreo;
-    const correoFavorito = await prisma.correo.update({
-    where: { id: id_correo_favorito },
-    data: { favorito: false }
-    });
-    return { estado: 200, mensaje: 'Correo desmarcado como favorito' };
+
+    try {
+        // Verificar las credenciales del remitente
+        const usuario = await prisma.usuario.findUnique({
+            where: { correo: correo },
+        });
+
+        if (!usuario || usuario.clave !== clave) {
+            return {
+                status: 400,
+                json: { mensaje: 'Credenciales incorrectas' }
+            };
+        }
+
+        // Verificar que el correo a desmarcar pertenece al usuario
+        const correoFavorito = await prisma.correo.findUnique({
+            where: {
+                id_usuarioId: {
+                    id: id_correo_favorito,
+                    usuarioId: usuario.id
+                }
+            }
+        });
+
+        if (!correoFavorito) {
+            return {
+                status: 400,
+                json: { mensaje: 'El correo no existe o no pertenece al usuario' }
+            };
+        }
+
+        // Desmarcar el correo como favorito
+        const correoActualizado = await prisma.correo.update({
+            where: {
+                id_usuarioId: {
+                    id: id_correo_favorito,
+                    usuarioId: usuario.id
+                }
+            },
+            data: { favorito: false }
+        });
+
+        return {
+            status: 200,
+            json: { mensaje: 'Correo desmarcado como favorito', correo: correoActualizado }
+        };
+    } catch (error) {
+        console.error('Error desmarcando el correo:', error);
+        return {
+            status: 500,
+            json: { mensaje: 'Error del servidor' }
+        };
+    }
 });
 
 //EP ver favoritos
@@ -178,7 +261,6 @@ app.get('/api/favoritos', async ({ query }) => {
     }
 });
 
-
 //ingreso de usuario
 app.post('/api/login', async ({ body }) => {
     const { correo, clave } = body as LoginRequestBody;
@@ -207,6 +289,65 @@ app.post('/api/login', async ({ body }) => {
     }
 });
 
+app.post('/api/enviarcorreo', async ({ body }) => {
+    const { correo, clave, destinatario, asunto, mensaje } = body as EnviarCorreo;
+
+    try {
+        // Verificar las credenciales del remitente
+        const usuario = await prisma.usuario.findUnique({
+            where: { correo: correo },
+        });
+
+        if (!usuario || usuario.clave !== clave) {
+            return {
+                status: 400,
+                json: { mensaje: 'Credenciales incorrectas' }
+            };
+        }
+
+        // Verificar si el remitente está bloqueado
+        if (usuario.bloqueado) {
+            return {
+                status: 403,
+                json: { mensaje: 'Usuario bloqueado. No puede enviar correos.' }
+            };
+        }
+
+        // Verificar que el destinatario existe
+        const destinatarioUsuario = await prisma.usuario.findUnique({
+            where: { correo: destinatario },
+        });
+
+        if (!destinatarioUsuario) {
+            return {
+                status: 400,
+                json: { mensaje: 'El destinatario no existe' }
+            };
+        }
+
+        // Crear el correo con el usuarioId del destinatario
+        const nuevoCorreo = await prisma.correo.create({
+            data: {
+                id: await prisma.correo.count({ where: { usuarioId: destinatarioUsuario.id } }) + 1,
+                usuarioId: destinatarioUsuario.id, // ID del destinatario
+                asunto,
+                contenido: mensaje,
+                favorito: false,
+            },
+        });
+
+        return {
+            status: 200,
+            json: { mensaje: 'Correo enviado correctamente', correo: nuevoCorreo }
+        };
+    } catch (error) {
+        console.error('Error enviando el correo:', error);
+        return {
+            status: 500,
+            json: { mensaje: 'Error del servidor' }
+        };
+    }
+});
 
 // Iniciar serv
 app.listen(3000, () => {
