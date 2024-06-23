@@ -1,7 +1,13 @@
 import requests
+import time
 
 BASE_URL = 'http://localhost:3000/api'
 
+def print_slow(text): #Funcion para mostrar con efecto "ola"
+    for char in text:
+        print(char, end='', flush=True)
+        time.sleep(0.03)
+    print() 
 
 def registrar():
     nombre = input("Ingrese su nombre: ")
@@ -64,22 +70,13 @@ def marcar_favorito(correo, clave):
     response = requests.post(f"{BASE_URL}/marcarcorreo", json=data)
     print(response.json())
 
-def marcar_favorito(correo, clave):
-    id_correo = int(input("Ingrese el ID del correo a marcar como favorito: "))
-    data = {
-        "correo": correo,
-        "clave": clave,
-        "id_correo_favorito": id_correo
-    }
-    response = requests.post(f"{BASE_URL}/marcarcorreo", json=data)
-    print(response.json())
-
 def main():
     while True:
-        print("\nMenú Inicial:")
-        print("1. Registrarse")
-        print("2. Iniciar sesión")
-        print("3. Salir")
+        print_slow("Menú Inicial:\n")
+        print_slow("1. Registrarse")
+        print_slow("2. Iniciar sesión")
+        print_slow("3. Salir")
+
         opcion = input("Seleccione una opción: ")
 
         if opcion == '1':
@@ -88,12 +85,12 @@ def main():
             correo, clave = autenticar()
             if correo and clave:
                 while True:
-                    print("\nMenú Principal:")
-                    print("1. Enviar un correo")
-                    print("2. Ver información de una dirección de correo electrónico")
-                    print("3. Ver correos marcados como favoritos")
-                    print("4. Marcar correo como favorito")
-                    print("5. Terminar con la ejecución del cliente")
+                    print_slow("Menú Principal:\n")
+                    print_slow("1. Enviar un correo")
+                    print_slow("2. Ver información de una dirección de correo electrónico\n")
+                    print_slow("3. Ver correos marcados como favoritos\n")
+                    print_slow("4. Marcar correo como favorito\n")
+                    print_slow("5. Terminar con la ejecución del cliente\n")
                     opcion = input("Seleccione una opción: ")
 
                     if opcion == '1':
