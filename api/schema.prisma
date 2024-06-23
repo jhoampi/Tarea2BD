@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js" //Prisma generado para TypeScript
+}
+
+datasource db {
+  provider = "postgresql" //La BD que vamos a trabajar
+  url      = env("DATABASE_URL") //Variable de entorno que toma la URl que se encuentra en nuestro .env
+}
+
+//La tabla de usuario en nuestra BD
+model Usuario {
+  id          Int      @id @default(autoincrement()) //PK
+  nombre      String
+  correo      String   @unique  //El correo es unico
+  clave       String
+  descripcion String? //Puede ser String de manera opcional
+  bloqueado   Boolean  @default(false) //Boolean de valor predeterminado falso
+  correos     Correo[] //Relacion de 1 a muchos con correo
+}
+
+//La tabla de correo en nuestra BD
+model Correo {
+  id          Int
+  usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id]) //Relacion de muchos a 1 con usuario
+  asunto      String
+  contenido   String
+  favorito    Boolean  @default(false) //Boolean de valor predeterminado falso
+
+  @@id([id, usuarioId]) //PK compuesta por id y usuarioId
+  @@unique([id, usuarioId]) //Clave unica  compuesta por lo mismo
+}
